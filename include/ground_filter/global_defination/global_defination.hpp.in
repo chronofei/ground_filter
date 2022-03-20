@@ -1,0 +1,13 @@
+#ifndef GROUND_FILTER_GLOBAL_DEFINATION_GLOBAL_DEFINATION_H_IN_
+#define GROUND_FILTER_GLOBAL_DEFINATION_GLOBAL_DEFINATION_H_IN_
+
+#include <string>
+
+namespace ground_filter
+{
+
+const std::string WORK_SPACE_PATH = "@PROJECT_SOURCE_DIR@";
+
+} // end namespace grid_slam
+
+#endif

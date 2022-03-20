@@ -1,0 +1,12 @@
+{
+	"ground_filter_method": "CSF",
+
+	"lidar_to_imu_transform":{
+		"roll" :1.2,
+		"pitch" : 2.5,
+		"yaw": 0.0,
+		"x": 1.57,
+		"y": 0.0,
+		"z": 1.65
+	}
+}

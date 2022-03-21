@@ -78,7 +78,6 @@ bool FileManager::getFileNameWithPattern(const std::string& path, const std::str
 
   DIR *dir;
   struct dirent *ptr;
-  char base[1000];
   if ((dir = opendir(path.c_str())) == NULL)
   {
     std::cout << "Cann't open directory " << path << ", Please check!" << std::endl;

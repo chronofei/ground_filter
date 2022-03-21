@@ -63,9 +63,9 @@ private:
     void   RasterTerrian(const PointCloud& cloud, std::vector<double>& heightVal);
 
     std::vector<int> FindUnmovablePoint(std::vector<XY> connected);
-    void Handle_slop_connected(std::vector<int> edgePoints,
-                               std::vector<XY> connected,
-                               std::vector<std::vector<int>> neibors);
+    void HandleSlopConnected(std::vector<int> edgePoints,
+                             std::vector<XY> connected,
+                             std::vector<std::vector<int>> neibors);
 
 private:
     PointCloud cloud_;

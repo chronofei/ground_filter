@@ -12,12 +12,12 @@ Particle::Particle(const Eigen::Vector3d& position, const Eigen::Vector3d& accel
     pos_     = position;
     old_pos_ = position;
 
-    isVisited_            = false;
+    is_visited_           = false;
     pos_x_                = 0;
     pos_y_                = 0;
     c_pos_                = 0;
     nearest_point_height_ = std::numeric_limits<double>::min();
-    tmpDist_              = std::numeric_limits<double>::max();
+    tmp_dist_             = std::numeric_limits<double>::max();
 }
 
 bool Particle::IsMovable()

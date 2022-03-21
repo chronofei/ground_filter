@@ -7,6 +7,9 @@
 // Eigen
 #include <Eigen/Core>
 
+// project
+#include "ground_filter/common/common.hpp"
+
 namespace ground_filter
 {
 
@@ -32,16 +35,16 @@ public:
 public:
     Eigen::Vector3d pos_;
     Eigen::Vector3d old_pos_;
-    bool            isVisited_;
+    bool            is_visited_;
     int             pos_x_;
     int             pos_y_;
     int             c_pos_;
 
     std::vector<Particle*> neighbors_;
 
-    std::vector<int> corresponding_lidar_point_;
-    double           nearest_point_height_;
-    double           tmpDist_;
+    std::vector<Point> corresponding_lidar_points_;
+    double             nearest_point_height_;
+    double             tmp_dist_;
 
 private:
     bool            movable_;

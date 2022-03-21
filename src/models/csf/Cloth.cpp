@@ -29,8 +29,8 @@ Cloth::Cloth(const PointCloud& cloud, const Eigen::Vector3d& acceleration, const
     {
         for (int j = 0; j < num_particles_height_; j++)
         {
-            Eigen::Vector3d pos(origin_[0] + i *cloth_resolution_,
-                                origin_[1] + j *cloth_resolution_,
+            Eigen::Vector3d pos(origin_[0] + i * cloth_resolution_,
+                                origin_[1] + j * cloth_resolution_,
                                 origin_[2]);
             particles_.emplace_back(Particle(pos, acceleration, time_step));
             particles_.back().pos_x_ = i;
@@ -38,39 +38,32 @@ Cloth::Cloth(const PointCloud& cloud, const Eigen::Vector3d& acceleration, const
         }
     }
 
-    for (int x = 0; x < num_particles_width_; x++)
+    for (int x = 0; x < num_particles_width_-1; x++)
     {
-        for (int y = 0; y < num_particles_height_; y++)
+        for (int y = 0; y < num_particles_height_-1; y++)
         {
-            if (x < num_particles_width_ - 1)
-                MakeConstraint(GetParticle(x, y), GetParticle(x + 1, y));
-
-            if (y < num_particles_height_ - 1)
-                MakeConstraint(GetParticle(x, y), GetParticle(x, y + 1));
-
-            if ((x < num_particles_width_ - 1) && (y < num_particles_height_ - 1))
-                MakeConstraint(GetParticle(x, y), GetParticle(x + 1, y + 1));
-
-            if ((x < num_particles_width_ - 1) && (y < num_particles_height_ - 1))
-                MakeConstraint(GetParticle(x + 1, y), GetParticle(x, y + 1));
-        }
-    }
-
-    for (int x = 0; x < num_particles_width_; x++)
-    {
-        for (int y = 0; y < num_particles_height_; y++)
-        {
-            if (x < num_particles_width_ - 2)
+            if (x < num_particles_width_ -2)
+            {
                 MakeConstraint(GetParticle(x, y), GetParticle(x + 2, y));
+            }
+
+            MakeConstraint(GetParticle(x, y), GetParticle(x + 1, y));
 
             if (y < num_particles_height_ - 2)
+            {
                 MakeConstraint(GetParticle(x, y), GetParticle(x, y + 2));
+            }
+
+            MakeConstraint(GetParticle(x, y), GetParticle(x, y + 1));
 
             if ((x < num_particles_width_ - 2) && (y < num_particles_height_ - 2))
+            {
                 MakeConstraint(GetParticle(x, y), GetParticle(x + 2, y + 2));
-
-            if ((x < num_particles_width_ - 2) && (y < num_particles_height_ - 2))
                 MakeConstraint(GetParticle(x + 2, y), GetParticle(x, y + 2));
+            }
+
+            MakeConstraint(GetParticle(x, y), GetParticle(x + 1, y + 1));
+            MakeConstraint(GetParticle(x + 1, y), GetParticle(x, y + 1));
         }
     }
 
@@ -167,7 +160,7 @@ double Cloth::FindHeightValByNeighbor(Particle *p)
     int neiborsize = p->neighbors_.size();
 
     for (int i = 0; i < neiborsize; i++) {
-        p->isVisited_ = true;
+        p->is_visited_ = true;
         nqueue.push(p->neighbors_[i]);
     }
 
@@ -179,11 +172,11 @@ double Cloth::FindHeightValByNeighbor(Particle *p)
 
         if (pneighbor->nearest_point_height_ > std::numeric_limits<double>::min()) {
             for (std::size_t i = 0; i < pbacklist.size(); i++)
-                pbacklist[i]->isVisited_ = false;
+                pbacklist[i]->is_visited_ = false;
 
             while (!nqueue.empty()) {
                 Particle *pp = nqueue.front();
-                pp->isVisited_ = false;
+                pp->is_visited_ = false;
                 nqueue.pop();
             }
 
@@ -194,8 +187,8 @@ double Cloth::FindHeightValByNeighbor(Particle *p)
             for (int i = 0; i < nsize; i++) {
                 Particle *ptmp = pneighbor->neighbors_[i];
 
-                if (!ptmp->isVisited_) {
-                    ptmp->isVisited_ = true;
+                if (!ptmp->is_visited_) {
+                    ptmp->is_visited_ = true;
                     nqueue.push(ptmp);
                 }
             }
@@ -209,8 +202,9 @@ void Cloth::RasterTerrian(const PointCloud& cloud, std::vector<double>& heightVa
 {
     for (size_t i = 0; i < cloud.size(); i++)
     {
-        double pc_x = cloud[i].x;
-        double pc_y = cloud[i].y;
+        auto point = cloud[i];
+        double pc_x = point.x;
+        double pc_y = point.y;
 
         double deltaX = pc_x - origin_[0];
         double deltaZ = pc_y - origin_[1];
@@ -220,12 +214,12 @@ void Cloth::RasterTerrian(const PointCloud& cloud, std::vector<double>& heightVa
         if ((col >= 0) && (row >= 0))
         {
             Particle *pt = GetParticle(col, row);
-            pt->corresponding_lidar_point_.push_back(i);
+            pt->corresponding_lidar_points_.emplace_back(point);
             double pc2particleDist = SquareDistanceXY(pc_x, pc_y, pt->pos_[0], pt->pos_[1]);
 
-            if (pc2particleDist < pt->tmpDist_)
+            if (pc2particleDist < pt->tmp_dist_)
             {
-                pt->tmpDist_              = pc2particleDist;
+                pt->tmp_dist_             = pc2particleDist;
                 pt->nearest_point_height_ = cloud[i].z;
             }
         }
@@ -302,7 +296,7 @@ void Cloth::MovableFilter()
         for (int y = 0; y < num_particles_height_; y++) {
             Particle *ptc = GetParticle(x, y);
 
-            if (ptc->IsMovable() && !ptc->isVisited_) {
+            if (ptc->IsMovable() && !ptc->is_visited_) {
                 std::queue<int> que;
                 std::vector<XY> connected; // store the connected component
                 std::vector<std::vector<int> > neibors;
@@ -311,7 +305,7 @@ void Cloth::MovableFilter()
 
                 // visit the init node
                 connected.push_back(XY(x, y));
-                particles_[index].isVisited_ = true;
+                particles_[index].is_visited_ = true;
 
                 // enqueue the init node
                 que.push(index);
@@ -327,9 +321,9 @@ void Cloth::MovableFilter()
                         Particle *ptc_left = GetParticle(cur_x - 1, cur_y);
 
                         if (ptc_left->IsMovable()) {
-                            if (!ptc_left->isVisited_) {
+                            if (!ptc_left->is_visited_) {
                                 sum++;
-                                ptc_left->isVisited_ = true;
+                                ptc_left->is_visited_ = true;
                                 connected.push_back(XY(cur_x - 1, cur_y));
                                 que.push(num_particles_width_ * cur_y + cur_x - 1);
                                 neibor.push_back(sum - 1);
@@ -344,9 +338,9 @@ void Cloth::MovableFilter()
                         Particle *ptc_right = GetParticle(cur_x + 1, cur_y);
 
                         if (ptc_right->IsMovable()) {
-                            if (!ptc_right->isVisited_) {
+                            if (!ptc_right->is_visited_) {
                                 sum++;
-                                ptc_right->isVisited_ = true;
+                                ptc_right->is_visited_ = true;
                                 connected.push_back(XY(cur_x + 1, cur_y));
                                 que.push(num_particles_width_ * cur_y + cur_x + 1);
                                 neibor.push_back(sum - 1);
@@ -361,9 +355,9 @@ void Cloth::MovableFilter()
                         Particle *ptc_bottom = GetParticle(cur_x, cur_y - 1);
 
                         if (ptc_bottom->IsMovable()) {
-                            if (!ptc_bottom->isVisited_) {
+                            if (!ptc_bottom->is_visited_) {
                                 sum++;
-                                ptc_bottom->isVisited_ = true;
+                                ptc_bottom->is_visited_ = true;
                                 connected.push_back(XY(cur_x, cur_y - 1));
                                 que.push(num_particles_width_ * (cur_y - 1) + cur_x);
                                 neibor.push_back(sum - 1);
@@ -378,9 +372,9 @@ void Cloth::MovableFilter()
                         Particle *ptc_top = GetParticle(cur_x, cur_y + 1);
 
                         if (ptc_top->IsMovable()) {
-                            if (!ptc_top->isVisited_) {
+                            if (!ptc_top->is_visited_) {
                                 sum++;
-                                ptc_top->isVisited_ = true;
+                                ptc_top->is_visited_ = true;
                                 connected.push_back(XY(cur_x, cur_y + 1));
                                 que.push(num_particles_width_ * (cur_y + 1) + cur_x);
                                 neibor.push_back(sum - 1);
@@ -395,7 +389,7 @@ void Cloth::MovableFilter()
 
                 if (sum > MAX_PARTICLE_FOR_POSTPROCESSIN) {
                     std::vector<int> edgePoints = FindUnmovablePoint(connected);
-                    Handle_slop_connected(edgePoints, connected, neibors);
+                    HandleSlopConnected(edgePoints, connected, neibors);
                 }
             }
         }
@@ -484,7 +478,7 @@ std::vector<int> Cloth::FindUnmovablePoint(std::vector<XY> connected)
     return edgePoints;
 }
 
-void Cloth::Handle_slop_connected(std::vector<int> edgePoints, std::vector<XY> connected, std::vector<std::vector<int> > neibors)
+void Cloth::HandleSlopConnected(std::vector<int> edgePoints, std::vector<XY> connected, std::vector<std::vector<int> > neibors)
 {
     std::vector<bool> visited;
 

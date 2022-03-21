@@ -13,6 +13,8 @@
 
 // project
 #include "ground_filter/models/ground_filter_base.hpp"
+#include "ground_filter/models/csf/CSF.hpp"
+
 #include "ground_filter/common/common.hpp"
 #include "ground_filter/tools/tools.hpp"
 #include "ground_filter/sensor_data/sensor_data.hpp"

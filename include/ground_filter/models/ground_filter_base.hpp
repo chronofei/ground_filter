@@ -21,7 +21,7 @@ public:
   GroundFilterBase();
   ~GroundFilterBase();
 
-  virtual bool Filte(CompoundData& data) =0;
+  virtual bool Filter(CompoundData& data) =0;
 
 }; // end class GroundFilterBase
 

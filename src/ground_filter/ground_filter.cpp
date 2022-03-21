@@ -6,8 +6,17 @@ namespace ground_filter
 GroundFilter::GroundFilter()
 {
   std::string method = ParseConfig::GetInstance()->getConfig("ground_filter")["ground_filter_method"].asString();
-  // if (method == "CSF")
-    //ground_filter_base_ = std::make_shared<CSF>();
+  if (method == "CSF")
+    ground_filter_base_ = std::make_shared<CSF>();
+  // else if (method == "LEGO_LOAM")
+  //   ground_filter_base_ = std::make_shared<>();
+  // else if (method == "LineFit")
+  //   ground_filter_base_ = std::make_shared<LineFit>();
+  else
+  {
+    std::cout << "Undefined ground filtering method" << std::endl;
+    exit(0);
+  }
 
   Vector6d lidar_to_imu_pose = Vector6d::Zero();
   lidar_to_imu_pose(0,0) = DEG_TO_PI * ParseConfig::GetInstance()->getConfig("ground_filter")["lidar_to_imu_transform"]["roll"].asDouble();
@@ -59,7 +68,7 @@ void GroundFilter::GroundFilterThread()
     pcl::removeNaNFromPointCloud(current_cloud_data_buff_.front().cloud, current_cloud_data_buff_.front().cloud, indices);
     pcl::transformPointCloud(current_cloud_data_buff_.front().cloud, result_data.cloud, lidar_to_imu_transform_.cast<float>());
 
-    // if (ground_filter_base_.Filter(result_data))
+    if (ground_filter_base_->Filter(result_data))
     {
       std::unique_lock<std::mutex> lockerCompoundData(new_compound_mutex_);
       compound_data_buff_.emplace_back(result_data);

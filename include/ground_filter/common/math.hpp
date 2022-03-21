@@ -99,6 +99,12 @@ inline Eigen::Matrix4d Vector6dToEigenPose(const Vector6d& pose)
   return current_pose;
 }
 
+inline double SquareDistanceXY(const double& x1, const double& y1,
+                               const double& x2, const double& y2)
+{
+  return (x2-x1)*(x2-x1)+(y2-y1)*(y2-y1);
+}
+
 } // end namespace ground_filter
 
 #endif

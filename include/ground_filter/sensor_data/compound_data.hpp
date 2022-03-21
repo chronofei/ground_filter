@@ -21,6 +21,7 @@ public:
       pcl::copyPointCloud(other.cloud, cloud);
       pcl::copyPointCloud(other.ground, ground);
       pcl::copyPointCloud(other.nonground, nonground);
+      pcl::copyPointCloud(other.cloth, cloth);
     }
     return *this;
   }
@@ -30,6 +31,7 @@ public:
   PointCloud cloud;
   PointCloud ground;
   PointCloud nonground;
+  PointCloud cloth;
 }; // end class CompoundData
 
 }  // end namespace ground_filter

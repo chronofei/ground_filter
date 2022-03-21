@@ -1,0 +1,23 @@
+{
+	"csf": {
+		"sloop_smooth": true,
+		"export_cloth": true,
+		"iterations": 500,
+
+		"gravity": 0.2,
+		"time_step": 0.65,
+		"cloth_resolution": 1,
+		"smooth_threshold": 0.3,
+		"height_threshold": 9999,
+		"rigitness": 3,
+		"class_threshold": 0.5
+	},
+
+	"lego_loam": {
+
+	},
+
+	"line_fit": {
+
+	}
+}

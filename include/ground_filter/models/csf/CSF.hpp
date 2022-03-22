@@ -32,13 +32,7 @@ private:
     bool    export_cloth_;
     int     iterations_;
 
-    double  gravity_;
-    double  time_step_;
-    double  cloth_resolution_;
-    double  smooth_threshold_;
-    double  height_threshold_;
-    int     rigidness_;
-    double  class_threshold_;  
+    std::shared_ptr<Cloth> cloth_;
 
 };  // end class CSF
 

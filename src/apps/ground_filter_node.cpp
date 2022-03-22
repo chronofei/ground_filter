@@ -21,20 +21,24 @@ GroundFilterROSInterface(ros::NodeHandle& nh)
 :nh_(nh)
 {
 	cloud_sub_ = nh_.subscribe(ParseConfig::GetInstance()->getConfig("ros_interface")["cloud_sub_topic"].asString(),
-							   1,
-							   &GroundFilterROSInterface::CloudCallBack,
-							   this);
+							   						 1,
+							   						 &GroundFilterROSInterface::CloudCallBack,
+							   						 this);
 
 	cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(
-							   	ParseConfig::GetInstance()->getConfig("ros_interface")["cloud_pub_topic"].asString(), 
-							   	1);
+							   						 ParseConfig::GetInstance()->getConfig("ros_interface")["cloud_pub_topic"].asString(), 
+							   						 1);
+
+	cloth_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(
+							   						 ParseConfig::GetInstance()->getConfig("ros_interface")["cloth_pub_topic"].asString(), 
+							   						 1);
 
 	ground_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(
-							   	ParseConfig::GetInstance()->getConfig("ros_interface")["ground_cloud_pub_topic"].asString(), 
-							   	1);
+							   							ParseConfig::GetInstance()->getConfig("ros_interface")["ground_cloud_pub_topic"].asString(), 
+							   							1);
 	nonground_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(
-							   	   ParseConfig::GetInstance()->getConfig("ros_interface")["nonground_cloud_pub_topic"].asString(), 
-							   	   1);
+							   	   						 ParseConfig::GetInstance()->getConfig("ros_interface")["nonground_cloud_pub_topic"].asString(), 
+							   	   						 1);
 
 	system_is_ok_ = true;
 	main_thread_  = std::thread(&GroundFilterROSInterface::MaintThread, this); 
@@ -59,6 +63,7 @@ private:
 void MaintThread()
 {
 	sensor_msgs::PointCloud2 cloud_msg;
+	sensor_msgs::PointCloud2 cloth_msg;
 	sensor_msgs::PointCloud2 ground_msg;
 	sensor_msgs::PointCloud2 nonground_msg;
 
@@ -74,6 +79,14 @@ void MaintThread()
 				cloud_msg.header.stamp = ros::Time().fromSec(compound_data_.time);
 				cloud_msg.header.frame_id = "base_link";
 				cloud_pub_.publish(cloud_msg);
+			}
+
+			if (cloth_pub_.getNumSubscribers() > 0)
+			{
+				pcl::toROSMsg(compound_data_.cloth, cloth_msg);
+				cloth_msg.header.stamp = ros::Time().fromSec(compound_data_.time);
+				cloth_msg.header.frame_id = "base_link";
+				cloth_pub_.publish(cloth_msg);
 			}
 
 			if (ground_pub_.getNumSubscribers() > 0)
@@ -102,6 +115,7 @@ private:
 
 	ros::Subscriber cloud_sub_;
 	ros::Publisher	cloud_pub_;
+	ros::Publisher	cloth_pub_;
 	ros::Publisher 	ground_pub_;
 	ros::Publisher 	nonground_pub_;
 

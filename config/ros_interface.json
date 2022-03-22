@@ -2,6 +2,7 @@
 	"cloud_sub_topic": "/rs_PointCloud2_20",
 
 	"cloud_pub_topic": "/rs_PointCloud2_20_cloud",
+	"cloth_pub_topic": "/rs_PointCloud2_20_cloth",
 	"ground_cloud_pub_topic": "/rs_PointCloud2_20_ground",
 	"nonground_cloud_pub_topic": "/rs_PointCloud2_20_nonground"
 }

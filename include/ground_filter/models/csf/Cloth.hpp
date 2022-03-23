@@ -56,7 +56,7 @@ private:
 
     void SatisfyConstraintSelf(int particle);
 
-    std::vector<int> FindUnmovablePoint(std::vector<int> connected);
+    std::vector<int> FindUnmovablePoint(const std::vector<int>& connected);
     void HandleSlopConnected(std::vector<int> edgePoints,
                              std::vector<int> connected,
                              std::vector<std::vector<int>> neibors);

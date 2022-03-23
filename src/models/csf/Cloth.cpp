@@ -319,6 +319,7 @@ void Cloth::MovableFilter(const int& max_particle_for_postprocess)
                 int index = GetIndex1D(x,y);
 
                 connected.push_back(index);
+                particle.c_pos_ = 0;
 
                 que.push(index);
 

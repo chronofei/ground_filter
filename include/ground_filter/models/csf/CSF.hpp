@@ -34,6 +34,10 @@ private:
 
     std::shared_ptr<Cloth> cloth_;
 
+    double class_threshold_;
+
+    int    max_particle_for_postprocess_;
+
 };  // end class CSF
 
 }  // end namespace ground_filter

@@ -1,18 +1,19 @@
 {
 	"csf": {
-		"sloop_smooth": false,
+		"sloop_smooth": true,
 		"export_cloth": true,
-		"iterations": 500,
+		"iterations": 50,
 
 		"cloth_width": 80.0,
 		"cloth_height": 80.0,
 		"acceleration": 0.2,
 		"time_step": 0.65,
-		"cloth_resolution": 1,
+		"cloth_resolution": 2,
 		"smooth_threshold": 0.3,
 		"height_threshold": 9999,
 		"rigidness": 3,
-		"class_threshold": 0.5
+		"class_threshold": 0.2,
+		"max_particle_for_postprocess": 50
 	},
 
 	"lego_loam": {

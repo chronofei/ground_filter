@@ -10,6 +10,7 @@
 // PCL
 #include <pcl/common/transforms.h>
 #include <pcl/filters/impl/filter.hpp>
+#include <pcl/filters/statistical_outlier_removal.h>
 
 // project
 #include "ground_filter/models/ground_filter_base.hpp"

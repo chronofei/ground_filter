@@ -35,7 +35,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIT,
 namespace ground_filter
 {
 
-using Point         = pcl::PointXYZIT;
+using Point         = pcl::PointXYZI;
 using PointCloud    = pcl::PointCloud<Point>;
 using PointCloudPtr = PointCloud::Ptr;
 

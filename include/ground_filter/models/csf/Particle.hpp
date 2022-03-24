@@ -30,7 +30,7 @@ public:
 
     int GetNeighbor(int index){return neighbors_[index];}
     void AddNeighbor(int neighbor){neighbors_.emplace_back(neighbor);}
-    size_t GetNeighborSize(){return neighbors_.size();}
+    std::size_t GetNeighborSize(){return neighbors_.size();}
 
     void Clear();
 
@@ -41,12 +41,12 @@ public:
     double             nearest_point_height_;
 
     std::vector<Point> lidar_points_;
+
     bool               is_visited_;
     double             tmp_dist_;
     int                c_pos_;
 
 private:
-    double             shift_by_acc_;
     Eigen::Vector2d    position_;
     Eigen::Vector2i    raster_index_;
     std::vector<int>   neighbors_;

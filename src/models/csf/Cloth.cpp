@@ -6,20 +6,19 @@ namespace ground_filter
 Cloth::Cloth(const Eigen::Vector2d cloth_size, const double& cloth_resolution,
              const double& acceleration,       const double& time_step,
              const double& smooth_threshold,   const double& height_threshold,
-             const int& rigidness)
+             const double& class_threshold)
 {
     shift_by_acc_     = acceleration * time_step * time_step;
 
     cloth_resolution_ = cloth_resolution;
 
-    cloth_origin_     = Eigen::Vector2d( 0.0             - 2* cloth_resolution_,
+    cloth_origin_     = Eigen::Vector2d(0.0              - 2 * cloth_resolution_,
                                         -cloth_size[1]/2 - 2 * cloth_resolution_);
 
     cloth_width_      = static_cast<int>(std::floor(cloth_size[0] / cloth_resolution_)) + 2 * 2;
     cloth_height_     = static_cast<int>(std::floor(cloth_size[1] / cloth_resolution_)) + 2 * 2;
 
     particle_number_  = cloth_width_ * cloth_height_;
-
     particles_.resize(particle_number_);
     for (int row = 0; row < cloth_height_; row++)
     {
@@ -27,39 +26,29 @@ Cloth::Cloth(const Eigen::Vector2d cloth_size, const double& cloth_resolution,
         {
             particles_[GetIndex1D(col, row)].SetPosition(cloth_origin_ + Eigen::Vector2d(col * cloth_resolution_, row * cloth_resolution_));
             particles_[GetIndex1D(col, row)].SetRasterIndex(Eigen::Vector2i(col, row));
-        }
-    }
 
-    for (int row = 0; row < cloth_height_-1; row++)
-    {
-        for (int col = 0; col < cloth_width_-1; col++)
-        {
-            if (col < cloth_width_ -2)
+            if (col < cloth_width_-1)
             {
-                MakeConstraint(GetIndex1D(col,row), GetIndex1D(col+2, row));
+                MakeConstraint(GetIndex1D(col, row), GetIndex1D(col + 1, row));
             }
 
-            if (row < cloth_height_ - 2)
+            if (row < cloth_height_-1)
             {
-                MakeConstraint(GetIndex1D(col, row), GetIndex1D(col, row + 2));
+                MakeConstraint(GetIndex1D(col, row), GetIndex1D(col, row + 1));
             }
 
-            if ((col < cloth_width_ - 2) && (row < cloth_height_ - 2))
+            if ((col < cloth_width_-1) && (row < cloth_height_-1))
             {
-                MakeConstraint(GetIndex1D(col, row), GetIndex1D(col + 2, row + 2));
-                MakeConstraint(GetIndex1D(col + 2, row), GetIndex1D(col, row + 2));
+                MakeConstraint(GetIndex1D(col, row), GetIndex1D(col + 1, row + 1));
+                MakeConstraint(GetIndex1D(col + 1, row), GetIndex1D(col, row + 1));
             }
-
-            MakeConstraint(GetIndex1D(col, row), GetIndex1D(col + 1, row));
-            MakeConstraint(GetIndex1D(col, row), GetIndex1D(col, row + 1));
-            MakeConstraint(GetIndex1D(col, row), GetIndex1D(col + 1, row + 1));
-            MakeConstraint(GetIndex1D(col + 1, row), GetIndex1D(col, row + 1));
         }
     }
 
     smooth_threshold_ = smooth_threshold;
     height_threshold_ = height_threshold;
-    rigidness_        = rigidness;
+
+    class_threshold_  = class_threshold;
 }
 
 int Cloth::GetIndex1D(int col, int row)
@@ -75,22 +64,22 @@ void Cloth::MakeConstraint(int p1, int p2)
 
 void Cloth::Clear()
 {
-    for (size_t i=0; i<particles_.size(); i++)
+    for (std::size_t i=0; i<particles_.size(); i++)
     {
         particles_[i].Clear();
     }
-
-    heightvals_.clear();
-    heightvals_.resize(cloth_height_ * cloth_width_, -10.0);
 }
 
 void Cloth::RasterizePointCloud(const PointCloud& cloud)
 {
     double lowest_height = std::numeric_limits<double>::max();
 
-    for (size_t i=0; i<cloud.size(); i++)
+    for (std::size_t i=0; i<cloud.size(); i++)
     {
         auto point = cloud[i];
+
+        if (point.x * point.x + point.y * point.y < 64.0)
+            continue;
 
         int col = int((point.x - cloth_origin_[0]) / cloth_resolution_ + 0.5);
         int row = int((point.y - cloth_origin_[1]) / cloth_resolution_ + 0.5);
@@ -106,10 +95,20 @@ void Cloth::RasterizePointCloud(const PointCloud& cloud)
 
             double pc_2_particle_dist = SquareDistanceXY(Eigen::Vector2d(point.x, point.y), particle.GetPosition());
 
-            if (pc_2_particle_dist < particle.tmp_dist_)
+            if (particle.tmp_dist_ < 0.01)
             {
-                particle.tmp_dist_             = pc_2_particle_dist;
-                particle.nearest_point_height_ = cloud[i].z;
+                if (pc_2_particle_dist < 0.01 && point.z < particle.nearest_point_height_)
+                {
+                    particle.nearest_point_height_ = point.z;
+                }
+            }
+            else
+            {
+                if (pc_2_particle_dist < particle.tmp_dist_)
+                {
+                    particle.tmp_dist_             = pc_2_particle_dist;
+                    particle.nearest_point_height_ = point.z;
+                }
             }
         }
     }
@@ -121,7 +120,9 @@ void Cloth::RasterizePointCloud(const PointCloud& cloud)
         particle.curr_height_ = particle.last_height_ = lowest_height;
 
         if (particle.nearest_point_height_ < HEIGHT_THRESHOLD + 1.0e-6)
+        {
             particles_[i].nearest_point_height_ = FindHeightValByScanline(i);
+        }
     }
 }
 
@@ -170,9 +171,9 @@ double Cloth::FindHeightValByNeighbor(int particle)
     std::queue<int>  nqueue;
     std::vector<int> pbacklist;
 
-    size_t neiborsize = particles_[particle].GetNeighborSize();
+    std::size_t neiborsize = particles_[particle].GetNeighborSize();
 
-    for (size_t i = 0; i < neiborsize; i++)
+    for (std::size_t i = 0; i < neiborsize; i++)
     {
         auto neibor = particles_[particle].GetNeighbor(i);
         particles_[neibor].is_visited_ = true;
@@ -187,13 +188,15 @@ double Cloth::FindHeightValByNeighbor(int particle)
 
         if (particles_[pneighbor].nearest_point_height_ > HEIGHT_THRESHOLD + 1.0e-6)
         {
-            for (size_t i = 0; i < pbacklist.size(); i++)
-                particles_[pbacklist[i]].is_visited_ = false;
+            for (std::size_t i = 0; i < pbacklist.size(); i++)
+            {
+                particles_[pbacklist[i]].is_visited_           = false;
+            }
 
             while (!nqueue.empty())
             {
                 int pp = nqueue.front();
-                particles_[pp].is_visited_ = false;
+                particles_[pp].is_visited_           = false;
                 nqueue.pop();
             }
 
@@ -201,9 +204,9 @@ double Cloth::FindHeightValByNeighbor(int particle)
         }
         else
         {
-            int nsize = particles_[pneighbor].GetNeighborSize();
+            std::size_t nsize = particles_[pneighbor].GetNeighborSize();
 
-            for (int i = 0; i < nsize; i++)
+            for (std::size_t i = 0; i < nsize; i++)
             {
                 int ptmp = particles_[pneighbor].GetNeighbor(i);
 
@@ -219,7 +222,7 @@ double Cloth::FindHeightValByNeighbor(int particle)
     return HEIGHT_THRESHOLD;
 }
 
-double Cloth::TimeStep()
+void Cloth::TimeStep(const int& iteration)
 {
     for (int i = 0; i < particle_number_; i++)
     {
@@ -234,52 +237,33 @@ double Cloth::TimeStep()
     }
 
     for (int j = 0; j < particle_number_; j++)
-    {
-        SatisfyConstraintSelf(j);
-    }
-
-    double maxDiff = 0;
-
-    for (int i = 0; i < particle_number_; i++)
-    {
-        auto& particle = particles_[i];
-
-        if (particle.movable_)
-        {
-            double diff = fabs(particle.curr_height_ - particle.last_height_);
-
-            if (diff > maxDiff)
-                maxDiff = diff;
-        }
-    }
-
-    return maxDiff;
+        SatisfyConstraintSelf(j, iteration);
 }
 
-void Cloth::SatisfyConstraintSelf(int particle)
+void Cloth::SatisfyConstraintSelf(const int& particle, const int& iteration)
 {
     auto& p1 = particles_[particle];
 
     for (std::size_t i = 0; i < p1.GetNeighborSize(); i++)
     {
-        Particle& p2 = particles_[p1.GetNeighbor(i)];
+        auto& p2 = particles_[p1.GetNeighbor(i)];
 
         double diff = p2.curr_height_ - p1.curr_height_;
 
         if (p1.movable_ && p2.movable_)
         {
-            double diff_half = diff * (rigidness_ > 14 ? 0.5 : doubleMove1[rigidness_]);
+            double diff_half = diff * (iteration > 14 ? 0.5 : doubleMove[iteration]);
             p1.curr_height_ += diff_half;
             p2.curr_height_ -= diff_half;
         }
         else if (p1.movable_ && !p2.movable_)
         {
-            double diff_half = diff * (rigidness_ > 14 ? 0.5 : doubleMove1[rigidness_]);
+            double diff_half = diff * (iteration > 14 ? 1.0 : singleMove[iteration]);
             p1.curr_height_ += diff_half;
         }
         else if (!p1.movable_ && p2.movable_)
         {
-            double diff_half = diff * (rigidness_ > 14 ? 0.5 : doubleMove1[rigidness_]);
+            double diff_half = diff * (iteration > 14 ? 1.0 : singleMove[iteration]);
             p2.curr_height_ -= diff_half;
         }
     }
@@ -564,57 +548,56 @@ void Cloth::HandleSlopConnected(std::vector<int> edgePoints, std::vector<int> co
     }
 }
 
-void Cloth::GetCloth(PointCloud& cloth)
-{
-    cloth.clear();
-
-    for (std::size_t i = 0; i < particles_.size(); i++)
-    {
-        auto position = particles_[i].GetPosition3D();
-        Point temp;
-        temp.x = position[0];
-        temp.y = position[1];
-        temp.z = position[2];
-
-        cloth.push_back(temp);
-    }
-}
-
-void Cloth::GetFilterResult(const double& class_threshold, PointCloud& ground, PointCloud& nonground)
+void Cloth::GetFilterResult(PointCloud& ground, PointCloud& nonground, PointCloud& cloth)
 {
     ground.clear();
     nonground.clear();
+    cloth.clear();
 
-    for (int i = 0; i < particle_number_; i++)
+    for (int row = 0; row < cloth_height_-1; row++)
     {
-        auto& particle = particles_[i];
-
-        int col = particle.GetRasterIndex()[0];
-        int row = particle.GetRasterIndex()[1];
-
-        double h00 = particles_[GetIndex1D(col  , row  )].curr_height_;
-        double h10 = particles_[GetIndex1D(col+1, row  )].curr_height_;
-        double h11 = particles_[GetIndex1D(col+1, row+1)].curr_height_;
-        double h01 = particles_[GetIndex1D(col  , row+1)].curr_height_;
-
-        for (size_t j=0; j<particle.lidar_points_.size(); j++)
+        for (int col = 0; col < cloth_width_-1; col++)
         {
-            auto point = particle.lidar_points_[j];
+            double h00 = particles_[GetIndex1D(col  , row  )].curr_height_;
+            double h10 = particles_[GetIndex1D(col+1, row  )].curr_height_;
+            double h11 = particles_[GetIndex1D(col+1, row+1)].curr_height_;
+            double h01 = particles_[GetIndex1D(col  , row+1)].curr_height_;
 
-            double subdeltaX = (point.x - particle.GetPosition()[0]) / cloth_resolution_;
-            double subdeltaY = (point.y - particle.GetPosition()[1]) / cloth_resolution_;
+            auto& particle = particles_[GetIndex1D(col, row)];
 
-            double fxy = h00 * (1 - subdeltaX) * (1 - subdeltaY) +
-                         h01 * (1 - subdeltaX) *      subdeltaY  +
-                         h11 *      subdeltaX  *      subdeltaY  +
-                         h10 *      subdeltaX  * (1 - subdeltaY);
+            {
+                auto position = particle.GetPosition3D();
+                Point temp;
+                temp.x = position[0];
+                temp.y = position[1];
+                temp.z = position[2];
+                cloth.push_back(temp);
+            }
 
-            double height_var = fxy - point.z;
+            for (std::size_t j=0; j<particle.lidar_points_.size(); j++)
+            {
+                auto point = particle.lidar_points_[j];
 
-            if (std::fabs(height_var) < class_threshold)
-                ground.push_back(point);
-            else
-                nonground.push_back(point);
+                if (std::fabs(point.z - particle.curr_height_) < 2 * class_threshold_)
+                {
+                    double subdeltaX = (point.x - particle.GetPosition()[0]) / cloth_resolution_;
+                    double subdeltaY = (point.y - particle.GetPosition()[1]) / cloth_resolution_;
+
+                    double fxy = h00 * (1 - subdeltaX) * (1 - subdeltaY) +
+                                 h01 * (1 - subdeltaX) *      subdeltaY  +
+                                 h11 *      subdeltaX  *      subdeltaY  +
+                                 h10 *      subdeltaX  * (1 - subdeltaY);
+
+                    double height_var = fxy - point.z;
+
+                    if (std::fabs(height_var) < class_threshold_)
+                        ground.push_back(point);
+                    else
+                        nonground.push_back(point);
+                }
+                else
+                    nonground.push_back(point);
+            }
         }
     }
 }

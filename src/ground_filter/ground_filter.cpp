@@ -64,6 +64,7 @@ void GroundFilter::GroundFilterThread()
       continue;
 
     CompoundData result_data;
+
     std::vector<int> indices;
     pcl::removeNaNFromPointCloud(current_cloud_data_buff_.front().cloud, current_cloud_data_buff_.front().cloud, indices);
     pcl::transformPointCloud(current_cloud_data_buff_.front().cloud, result_data.cloud, lidar_to_imu_transform_.cast<float>());

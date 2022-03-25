@@ -16,8 +16,6 @@ include(cmake/global_defination.cmake)
 find_package(catkin REQUIRED COMPONENTS
              roscpp
              sensor_msgs
-             nav_msgs
-             geometry_msgs
              pcl_ros
              tf
 )

@@ -5,8 +5,8 @@ namespace ground_filter
 
 CSF::CSF()
 {
-    sloop_smooth_     = ParseConfig::GetInstance()->getConfig("models")["csf"]["sloop_smooth"].asBool();
-    iterations_       = ParseConfig::GetInstance()->getConfig("models")["csf"]["iterations"].asInt();
+    sloop_smooth_                 = ParseConfig::GetInstance()->getConfig("models")["csf"]["sloop_smooth"].asBool();
+    iterations_                   = ParseConfig::GetInstance()->getConfig("models")["csf"]["iterations"].asInt();
     max_particle_for_postprocess_ = ParseConfig::GetInstance()->getConfig("models")["csf"]["max_particle_for_postprocess"].asInt();
 
     double cloth_width      = ParseConfig::GetInstance()->getConfig("models")["csf"]["cloth_width"].asDouble();
@@ -32,8 +32,6 @@ bool CSF::Filter(CompoundData& data)
     if (data.cloud.empty())
         return false;
 
-    TicToc csf;
-
     cloth_->Clear();
     cloth_->RasterizePointCloud(data.cloud);
     
@@ -48,7 +46,6 @@ bool CSF::Filter(CompoundData& data)
 
     cloth_->GetFilterResult(data.ground, data.nonground, data.cloth);
 
-    csf.toc("CSF");
     return true;
 }
 
